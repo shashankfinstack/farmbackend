@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: farmer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres                           
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  web:
+    image: farmerapp2
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      SQLALCHEMY_DATABASE_URI: postgresql://postgres:postgres@db:5432/farmer
+    ports:
+      - "5001:5001"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+    networks:
+      - app_network
+
+  nginx:
+    image: nginx:stable
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /Users/shashankmishra/Desktop/ssl\ certificate\ and\ key/certificate.crt:/etc/ssl/certs/certificate.crt  # Correct path to SSL certificate
+      - /Users/shashankmishra/Desktop/ssl\ certificate\ and\ key/private.key:/etc/ssl/private/private.key        # Correct path to SSL private key
+    depends_on:
+      - web
+    networks:
+      - app_network
+
+volumes:
+  postgres_data: {}
+
+networks:
+  app_network:
+    driver: overlay
